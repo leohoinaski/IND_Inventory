@@ -81,6 +81,7 @@ domain = gpd.GeoDataFrame(index=[0],geometry=[domain])
 domain.crs = "EPSG:4326"
 pip_mask = ind.within(domain.iloc[0,0])
 ind = ind.loc[pip_mask]
+ind=ind.reset_index(drop=True)
 
 # Selecting data from industrial inventory - emissions in kg/s
 # Measured data
@@ -143,7 +144,7 @@ grids,xv,yv,xX,yY = gridding(x,y)
 dataIND = populatingGrid(dataEmissIND,centerIND,xv,yv,xX,yY)
 
 # Setting output file's name
-name = 'INDannualEmiss'+str(year)+'_'+str(month)+'.nc'
+name = 'INDannualEmiss_'+fileId+'_'+str(deltaX)+'x'+str(deltaY)+'_'+str(year)+'.nc'
 
 # Calling creatNETCDF function
 createNETCDF(outPath,name,dataIND,xv,yv,y,x,centerIND,year,month)
