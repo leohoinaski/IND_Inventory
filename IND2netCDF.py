@@ -76,6 +76,12 @@ ind = gpd.GeoDataFrame(
     dfind, geometry=gpd.points_from_xy(dfind.Long, dfind.Lat))
 ind.crs = "EPSG:4326" # Setting EPSG
 
+domain = Polygon(zip([loni,loni,lonf,lonf],[lati,latf,latf,lati]))
+domain = gpd.GeoDataFrame(index=[0],geometry=[domain])
+domain.crs = "EPSG:4326"
+pip_mask = ind.within(domain.iloc[0,0])
+ind = ind.loc[pip_mask]
+
 # Selecting data from industrial inventory - emissions in kg/s
 # Measured data
 dataEmissIND = ind[['PMemis', 
