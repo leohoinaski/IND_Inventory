@@ -30,16 +30,17 @@ def gridding(lon,lat):
     yY = np.array(grids['Y']).reshape((lon.shape[0]-1,lat.shape[0]-1)).transpose()
     return grids,xv,yv,xX,yY
 
-def populatingGrid(dataEmiss,center,xv,yv,xX,yY):   
-    data = np.zeros([np.size(yv,0)-1, np.size(xv,1)-1,dataEmiss.shape[1]])
+def populatingGrid(dataEmiss,center,xX,yY,xv,yv):   
+    data = np.zeros([1,dataEmiss.shape[1],np.size(yv,0)-1, np.size(xv,1)-1])
     xcenter = center.geometry.centroid.x
     ycenter = center.geometry.centroid.y
    
     for ii in range(0,dataEmiss.shape[0]):
         dist = ((xcenter[ii]-xX)**2 + (ycenter[ii]-yY)**2)**(1/2)
         mindist = np.where(dist == np.amin(dist))
+        print('Fire number '+str(ii)+' from '+str(dataEmiss.shape[0]))
         for kk in range (0,dataEmiss.shape[1]):
-            data[mindist[0][0],mindist[1][0],kk]= np.nansum([data[mindist[0][0],mindist[1][0],kk],dataEmiss.iloc[ii,kk]])        
+            data[0,kk,mindist[0][0],mindist[1][0]]= data[0,kk,mindist[0][0],mindist[1][0]]+dataEmiss.iloc[ii,kk]     
     return data
 
 def populatingGridMat(dataMat,center,xv,yv,xX,yY):   

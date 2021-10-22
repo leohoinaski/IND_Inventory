@@ -1,26 +1,48 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
------------------------IND2netCDF-----------------------------
-Este scrip converte os dados das emissões do industriais provenientes
-do BRAIN em matricial para posterior criação do arquivo
-netCDF pela função netCDFcreator.py
-A resolução temporal é horária durante um mês de dados. 
-O usuário precisa indicar o mês e ano. A resolução espacial 
-é a mesma do arquivo do BRAVES. 
+-------------------------------------------------------------------------------
+                             IND2netCDF.py
+                             
+                             
+This is the main script to convert industrial emission from .csv file 
+to netCDF.
 
-Inputs:
-    folder: pasta com os arquivos do BRAIN
-    Inputs das emissões da queima da biomassa em kg/hora
-    FALTA ATUALIZAR A GRADE PARA O ARQUIVO DO MCIP
+Inputs: 
+    
+    rootPath: Path to functions
+    
+    outPath: Path to output folder
+    
+    lati: Initial latitude (lower-left)
+    
+    latf: Final latitude (upper-right)
+    
+    loni: Initial longitude (lower-left)
+    
+    lonf: Final longitude (upper-right)
+    
+    deltaX: Grid resolution/spacing in x direction
+    
+    deltaY: Grig resolution/spacing in y direction
+    
+    year: Base-year for your simulation
+            
+    fileId = identification of your output files
+       
 
 Outputs:
-    Arquivos netCDF - INDtemporalEmiss_ e INDannualEmiss.nc
-    Outputs em g/s ou mol/s
     
+    'INDannualEmiss_'+fileId+'_'+str(deltaX)+'x'+str(deltaY)+'_'+str(year)+'.nc'
+    
+    
+External functions:
+    gridding, populatingGrid, netCDFcreator
+    
+Last update = 21/10/2021
 
-@author: leohoinaski - leonardo.hoinaski@ufsc.br
-Atualizado em 04/05/2021
+Author: Leonardo Hoinaski - leonardo.hoinaski@ufsc.br
+
 ---------------------------------------------------------------
 """
 
@@ -28,16 +50,19 @@ import geopandas as gpd
 import pandas as pd
 import os 
 import numpy as np
-from netCDFcreator import createNETCDF
+from netCDFcreator import createNETCDF, createNETCDFtemporal
 #from temporalDisagregation import temporalDisagVehicular
 import numpy.matlib
 from shapely.geometry import Polygon
 from gridding import gridding, populatingGrid
+from IND_speciate import IndSpeciate
+import datetime
 
 
 #%%============================= INPUTS =========================================
 
 rootPath = '/media/leohoinaski/HDD/IND_inventory'
+
 outPath = rootPath +"/Outputs"
 
 #-------------------------Setting grid resolution------------------------------
@@ -101,11 +126,14 @@ dataEmissINDestmeas = ind[['PMestmeas',
 # Substituting nan by estimated data
 isna = dataEmissIND.isna()
 dataEmissIND[isna] = dataEmissINDestmeas[isna]
+dataEmissIND['ID'] = ind['ID']
 
 # Getting emissions centroid
 centerIND = ind.geometry.centroid
 centerIND.to_crs("EPSG:4326")   
 
+# Calling speciation function
+dataEmissX = IndSpeciate(rootPath,dataEmissIND)
 
 # -----------------------Gridding and populating-------------------------------
 # cd to the main folder
@@ -141,14 +169,25 @@ print('baseGrid_'+prefix+'.csv was created at ' + outPath )
 grids,xv,yv,xX,yY = gridding(x,y)
 
 # Calling populatingGrid function
-dataIND = populatingGrid(dataEmissIND,centerIND,xv,yv,xX,yY)
+dataIND = populatingGrid(dataEmissX.fillna(0),centerIND,xX,yY,xv,yv)
 
-# Setting output file's name
-name = 'INDannualEmiss_'+fileId+'_'+str(deltaX)+'x'+str(deltaY)+'_'+str(year)+'.nc'
+# # Setting output file's name
+# name = 'INDannualEmiss_'+fileId+'_'+str(deltaX)+'x'+str(deltaY)+'_'+str(year)+'.nc'
 
-# Calling creatNETCDF function
-createNETCDF(outPath,name,dataIND,xv,yv,y,x,centerIND,year,month)
+# # Calling creatNETCDF function
+# createNETCDF(outPath,name,dataIND,xv,yv,y,x,centerIND,year,month)
 
+name = 'INDannualSpecEmiss_'+fileId+'_'+str(deltaX)+'x'+str(deltaY)+'_'+str(year)+'.nc'
+# Calling createNETCDFtemporal - ANNUAL EMISSIONS
+startDate = datetime.datetime(year, month, 1, 0, 0)
+endDate = datetime.datetime(year, month, 1, 1, 0)
+datePfct = np.arange(np.datetime64(startDate),np.datetime64(endDate),3600000000)
+dates = pd.DataFrame(datePfct)   
+dates['year'] = year
+dates['month'] = 1
+dates['day'] = 1
+dates['hour'] = 00
+createNETCDFtemporal(outPath,name,dataIND,xv,yv,y,x,dates,month)
 
 #%% Calling netcdf creator
 
