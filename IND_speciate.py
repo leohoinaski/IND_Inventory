@@ -5,24 +5,39 @@
                              IND_speciate.py
                              
                              
-This function speciates the industrial emission in chemical species.
+This function speciates the industrial emission in chemical species. Conversion
+from NOx to NO (0.495) and NO2 (0.505)
 
 Inputs: 
     
     rootPath: Path to functions
+    
+    dataEmissIND: dataframe with industrial emissions and coordinates
+    
+    
+Input files:
+    
+    CMAQ_species.csv: list of CMAQ species in IndustriaSpeciation folder
+        
+    IND_PROFILES_speciate.csv: Speciation profiles by industrial ID in 
+            IndustriaSpeciation folder
+        
+    BR_Ind_Profiles.csv: speciate profiles to be used in each industrial ID
    
+    CMAQ_speciesMW: Molecular Weight of chemical species    
        
 
 Outputs:
     
+    dataEmissX: Dataframe with speciated emissions
 
     
 
-Last update = 21/10/2021
+Last update = 29/10/2021
 
 Author: Leonardo Hoinaski - leonardo.hoinaski@ufsc.br
 
----------------------------------------------------------------
+-------------------------------------------------------------------------------
 """
 
 #%% Importing packages
@@ -35,24 +50,24 @@ import numpy as np
 def IndSpeciate (rootPath,dataEmissIND):
     
     # Opening CMAQ_species.csv
-    file_path = "/IndustrialSpeciation/CMAQ_species.csv"
-    dfCMAQspc = pd.read_csv(rootPath+file_path)
+    file_path_CMAQ_species = "/IndustrialSpeciation/CMAQ_species.csv"
+    dfCMAQspc = pd.read_csv(rootPath+file_path_CMAQ_species)
     
     # Opening SPEC_names.csv
-    file_path = "/IndustrialSpeciation/SPEC_names.csv"
-    dfspec = pd.read_csv(rootPath+file_path,index_col=0)
+    file_path_SPEC_names = "/IndustrialSpeciation/SPEC_names.csv"
+    dfspec = pd.read_csv(rootPath+file_path_SPEC_names,index_col=0)
     
     # Opening SPEC_names.csv
-    file_path = "/Inputs/IND_PROFILES_speciate.xlsx"
-    proConv = pd.read_excel(rootPath+file_path,index_col=0)
+    file_path_IND_PROFILES_speciate = "/Inputs/IND_PROFILES_speciate.xlsx"
+    proConv = pd.read_excel(rootPath+file_path_IND_PROFILES_speciate,index_col=0)
     proConv['proID'] = proConv.index.astype(str)
     
     # Opening SPEC_names.csv
-    file_path = "/Inputs/BR_Ind_Profiles.xlsx"
-    IndProfiles = pd.read_excel(rootPath+file_path,index_col=0)
+    file_path_BR_Ind_Profiles = "/Inputs/BR_Ind_Profiles.xlsx"
+    IndProfiles = pd.read_excel(rootPath+file_path_BR_Ind_Profiles,index_col=0)
     
-    file_path = '/IndustrialSpeciation/CMAQ_speciesMW.csv'
-    smm = pd.read_csv(rootPath+file_path)
+    file_path_CMAQ_speciesMW = '/IndustrialSpeciation/CMAQ_speciesMW.csv'
+    smm = pd.read_csv(rootPath+file_path_CMAQ_speciesMW)
     
     dfCMAQspc2 = pd.DataFrame()
     for idx in IndProfiles.index:
