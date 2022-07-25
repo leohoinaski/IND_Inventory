@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul 22 13:32:45 2022
+
+@author: leohoinaski
+"""
+import netCDF4 as nc
+import numpy as np
+
+
+
+gridName = 'SC_2019'
+
+mcipFolder = '/media/leohoinaski/HDD/'+gridName
+
+METCRO3Dfolder = mcipFolder+'/METCRO3D_'+gridName+'.nc'
+GRIDCRO2Dfolder = mcipFolder+'/GRIDCRO2D_'+gridName+'.nc'
+
+METCRO3D = nc.Dataset(METCRO3Dfolder)
+GRIDCRO2D = nc.Dataset(GRIDCRO2Dfolder)
+
+T = METCRO3D['TA'][:]
+PRES = METCRO3D['PRES'][:]
+HT = GRIDCRO2D['HT'][:]
+
+P0 = 101325
+P =  PRES[0,:,0,0]
+T = T[0,:,0,0]
+HT = HT[0,0,0,0]
+
+
+Ts = 300
+Vs = 20
+Ds = 1
+Hs = 70
+
+def pressure2alt (P0,P,T):
+    P0 = np.array(P0)
+    P = np.array(P)
+    T = np.array(T)
+    #https://physics.stackexchange.com/questions/333475/how-to-calculate-altitude-from-current-temperature-and-pressure
+    # Estimating altitude 
+    alt = (((P0/P)**(1/5.257) -1)*(T))/(0.0065)
+    
+    return alt
+
+def plumeRise(Ts,Vs,Ds,Hs):
+    G=9.80665 #Mean gravitational acceleration
+    U=2 #Default wind speed
+    T=293 #Default ambient air temperature
+    
+    F=0.25*G*Vs*(Ds**2)*((Ts-T)/Ts)
+  
+    if F<55:
+        Hef = Hs + 21.31311057*(F**0.75)/U
+    else:
+        Hef = Hs + 38.87776061*(F**0.6)/U 
+        
+    return Hef
+                         
+
+def verticalProfile(dTdZ, altSigmas,Hef,HT):
+    A = 15 #https://www.cmascenter.org/cmaq/science_documentation/pdf/ch09.pdf
+    B = 117
+    sgz0 = A*np.exp(-B*dTdZ) 
+    fx = (1/(sgz0*2*np.pi))*np.exp(-((altSigmas-(Hef+HT))/(2*(sgz0**2))))
+    
+    return fx
+    
+
+altSigmas = pressure2alt (P0,P,T)
+
+Hef = plumeRise(Ts,Vs,Ds,Hs)
+
+dTdZ = np.diff(T)/np.diff(altSigmas)
+dTdZ = dTdZ[ np.where((Hef+HT)>altSigmas)[-1][-1]]
+
+fx = verticalProfile(dTdZ, altSigmas,Hef,HT)
+
+import matplotlib.pyplot as plt
+plt.plot(fx*100,altSigmas)
+
+
