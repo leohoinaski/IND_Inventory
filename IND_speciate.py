@@ -111,7 +111,7 @@ def IndSpeciate (rootPath,dataEmissIND):
     # Creating the .csv file   
     cmaqSpecies = dfCMAQspc.set_index('Formula').merge(cmaqSpecies.set_index('Formula'),how='left', on='Formula')
     cmaqSpecies=cmaqSpecies.fillna(0)   
-    cmaqSpecies.iloc[:,2:]=cmaqSpecies.iloc[:,2:]/100 # converting from percentage to factor
+    cmaqSpecies.iloc[:,3:]=cmaqSpecies.iloc[:,3:]/100 # converting from percentage to factor
     cmaqSpecies.to_csv(rootPath+'/IndustrialSpeciation/IND_speciation.csv')
     
     
@@ -119,10 +119,9 @@ def IndSpeciate (rootPath,dataEmissIND):
     # Creating dataEmiss matrix
     dataEmissX=pd.DataFrame()
 
-    vocSpecs = ['ACET','ACROLEIN','ALD2','ALD2_PRIMARY','ALDX','BENZ','BUTADIENE13','CH4',
-                'CH4_INV','ETH','ETHA','ETHY','ETOH','FORM','FORM_PRIMARY','IOLE','ISO','KET',
-                'MEOH','NAPH','NH3','PRPA','SOAALK','HCL','HONO','NH3_FERT','NVOL','OLE','SULF',
-                'TERP','TOL','UNK','UNR','XYLMN']
+    vocSpecs = ['ACET','ACROLEIN','ALD2','ALD2_PRIMARY','BENZ','BUTADIENE13','CH4',
+                'CH4_INV','ETH','ETHA','ETHY','ETOH','FORM','FORM_PRIMARY','ISO',
+                'MEOH','NAPH','PRPA','TOL','XYLMN']
                 
 
     # Filling VOC emissions
