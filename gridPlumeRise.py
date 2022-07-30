@@ -39,6 +39,7 @@ def BRIGGSplumeRise(Ts,Vs,Ds,Hs,Tas,Uas,dTdZ):
     Fb=G*Vs*(Ds**2)*((Ts-Tas)/Ts)
     Fb = np.max(Fb,0)
     Fm = (Vs**2)*(Ds**2)*Tas/(4*Ts) 
+    Fm  = np.max(Fb,0)
     
     if dTdZ>-0.0098:
         dTethadZ = dTdZ+0.0098
@@ -67,5 +68,7 @@ def BRIGGSplumeRise(Ts,Vs,Ds,Hs,Tas,Uas,dTdZ):
                 Hef = Hs+3*Ds/(Vs*Uas)
             else:
                 Hef = Hs + 38.87776061*(Fb**0.6)/Uas 
+    if Hef<0:
+        Hef = 0
         
     return Hef

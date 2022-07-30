@@ -36,7 +36,7 @@ def verticalProfile(dTdZ, altSigmas,Hef,HT):
     factor= np.diff(norm.cdf(altSigmas0, Hef+HT, sgz0))
     if np.sum(factor)>0:
         factor = factor/np.sum(factor)
-    
+    factor = np.absolute(factor)
     return factor,sgz0
     
 

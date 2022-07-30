@@ -387,7 +387,7 @@ def createNETCDFtemporalAndLayered(rootPath,folder,name,data,mcipMETCRO3Dpath):
     
     strVAR = ''
     for ids in polid.ID:
-        strVAR = strVAR + ids.ljust(15)
+        strVAR = strVAR + ids.ljust(16)
     #strVAR ='ACET            ACROLEIN        ALD2            ALD2_PRIMARY    ALDX            BENZ            BUTADIENE13     CH4             CH4_INV         CL2             CO              CO2_INV         ETH             ETHA            ETHY            ETOH            FORM            FORM_PRIMARY    HCL             HONO            IOLE            ISOP            KET             MEOH            N2O_INV         NAPH            NH3             NH3_FERT        NO              NO2             NVOL            OLE             PAL             PAR             PCA             PCL             PEC             PFE             PH2O            PK              PMC             PMG             PMN             PMOTHR          PNA             PNCOM           PNH4            PNO3            POC             PRPA            PSI             PSO4            PTI             SO2             SOAALK          SULF            TERP            TOL             UNK             UNR             VOC_INV         XYLMN           '
     setattr(f2, 'VAR-LIST', strVAR)
     
