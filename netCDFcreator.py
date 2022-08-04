@@ -35,35 +35,22 @@ import pandas as pd
 #import tarfile
 
 #%% Creating a dataset
-def createNETCDFannual(folder,name,data,xX,yY,dates,area,ltz):
+def createNETCDFannual(rootPath,folder,name,data,xX,yY):
     print('===================STARTING netCDFcreator_v1.py=======================')
     cdate = datetime.datetime.now()
     cdateStr = int(str(cdate.year)+str(cdate.timetuple().tm_yday))
     ctime = int(str(cdate.hour)+str(cdate.minute)+str(cdate.second))
-    # if month<10:
-    #     sdate = int(str(dates['year'][0])+'00'+str(month)) 
-    # else:
-    #     sdate = int(str(dates['year'][0])+'0'+str(month)) 
-    #dates['TSTEP'] = np.array(range(0,dates.shape[0]))
-    #datesString = dates.index.strftime('%Y-%m-%d %H:%M:%S')
-    #datesUsed= np.array([np.array(dates['TSTEP'].astype(str)),datesString]).transpose()
-    #datesString= np.repeat(datesUsed[:, :, np.newaxis], data.shape[1], axis=2)
-    tflag = np.empty([dates.shape[0],data.shape[1],2],dtype='i4')
-    for ii in range(0,dates.shape[0]):
-        tflag[ii,:,0]=int(dates['year'][0]*1000 + dates.index[ii].timetuple().tm_yday)
-        tflag[ii,:,1]=int(str(dates['hour'][ii])+'0000')
+
+    tflag = np.empty([1,1,2],dtype='i4')
+    tflag[0,:,0]=2022001
+    tflag[0,:,1]=000000
     
-    sdate =  dates['year'][0]*1000 + dates.index[0].timetuple().tm_yday            
+    sdate =  2022001000000         
 
     # Reshape area array
-    area1 = area.reshape((np.size(xX,1),np.size(yY,0))).transpose()
-    ltz = ltz.reshape((np.size(xX,1),np.size(yY,0))).transpose()
     
     f2 = nc4.Dataset(folder+'/'+name,'w', format='NETCDF4_CLASSIC') #'w' stands for write    
-    #Add global attributes
-    #f2.IOAPI_VERSION ='$Id: @(#) ioapi library version 3.1 $'
-    #f2.EXEC_ID = '???????????????'
-    # f2.FTYPE =  1
+    f2.FTYPE =  1
     f2.CDATE= cdateStr
     f2.CTIME= ctime
     f2.WDATE= cdateStr
@@ -96,33 +83,10 @@ def createNETCDFannual(folder,name,data,xX,yY,dates,area,ltz):
     print('YCELL = '+str(round(yY[1,0] - yY[0,0],6)))
     # f2.VGTYP= -1
     # f2.VGTOP= 0.0
-    # f2.VGLVLS= [0,0]
-    
-    #f2.GDNAM= 'SE53BENCH'       
-    #f2.UPNAM= 'M3WNDW'   
-    strVAR = ' ACET            ACROLEIN        ALD2           \n\
-    ALD2_PRIMARY    ALDX            BENZ            BUTADIENE13\n\
-    CH4             CH4_INV         CL2             CO\n\
-    CO2_INV         ETH             ETHA            ETHY\n\
-    ETOH            FORM            FORM_PRIMARY    HCL\n\
-    HONO            IOLE            ISOP            KET\n\
-    MEOH            N2O_INV         NAPH            NH3\n\
-    NH3_FERT        NO              NO2             NVOL\n\
-    OLE             PAL             PAR             PCA\n\
-    PCL             PEC             PFE             PH2O\n\
-    PK              PMC             PMG             PMN\n\
-    PMOTHR          PNA             PNCOM           PNH4\n\
-    PNO3            POC             PRPA            PSI\n\
-    PSO4            PTI             SO2             SOAALK\n\
-    SULF            TERP            TOL             UNK\n\
-    UNR             VOC_INV         XYLMN           PMFINE'        
-    f2.VAR_LIST=strVAR
-    f2.FILEDESC= 'BRAVES database ANNUAL vehicular emissions'
-    f2.HISTORY ='' 
-       
+    # f2.VGLVLS= [0,0] 
+ 
     # # Specifying dimensions
-    #tempgrp = f.createGroup('vehicularEmissions_data')
-    f2.createDimension('TSTEP', dates.shape[0])
+    f2.createDimension('TSTEP', 1)
     f2.createDimension('DATE-TIME', 2)
     f2.createDimension('LAY', 1)
     f2.createDimension('VAR', data.shape[1])
@@ -133,74 +97,7 @@ def createNETCDFannual(folder,name,data,xX,yY,dates,area,ltz):
     TFLAG = f2.createVariable('TFLAG', 'i4', ('TSTEP', 'VAR', 'DATE-TIME'))
     LON = f2.createVariable('Longitude', 'f4', ( 'ROW','COL'))
     LAT = f2.createVariable('Latitude', 'f4', ( 'ROW','COL'))
-    AREA = f2.createVariable('AREA', 'f4', ( 'ROW','COL'))
-    LTZ = f2.createVariable('LTZ', 'f4', ( 'ROW','COL'))
-    #TFLAG = f2.createVariable('TFLAG', 'i4', ('TSTEP'))
-    ACET = f2.createVariable('ACET', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    ACROLEIN = f2.createVariable('ACROLEIN', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    ALD2 = f2.createVariable('ALD2', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    ALD2_PRIMARY = f2.createVariable('ALD2_PRIMARY', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    ALDX = f2.createVariable('ALDX', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    BENZ = f2.createVariable('BENZ', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    BUTADIENE13 = f2.createVariable('BUTADIENE13', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    CH4 = f2.createVariable('CH4', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    CH4_INV = f2.createVariable('CH4_INV', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    CL2 = f2.createVariable('CL2', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    CO = f2.createVariable('CO', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    CO2_INV = f2.createVariable('CO2_INV', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    ETH = f2.createVariable('ETH', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    ETHA = f2.createVariable('ETHA', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    ETHY = f2.createVariable('ETHY', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    ETOH = f2.createVariable('ETOH', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    FORM = f2.createVariable('FORM', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    FORM_PRIMARY = f2.createVariable('FORM_PRIMARY', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    HCL = f2.createVariable('HCL', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    HONO = f2.createVariable('HONO', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    IOLE = f2.createVariable('IOLE', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    ISOP = f2.createVariable('ISOP', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    KET = f2.createVariable('KET', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    MEOH = f2.createVariable('MEOH', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    N2O_INV = f2.createVariable('N2O_INV', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    NAPH = f2.createVariable('NAPH', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    NH3 = f2.createVariable('NH3', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    NH3_FERT = f2.createVariable('NH3_FERT', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    NO = f2.createVariable('NO', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    NO2 = f2.createVariable('NO2', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    NVOL = f2.createVariable('NVOL', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    OLE = f2.createVariable('OLE', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PAL = f2.createVariable('PAL', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PAR = f2.createVariable('PAR', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PCA = f2.createVariable('PCA', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PCL = f2.createVariable('PCL', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PEC = f2.createVariable('PEC', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PFE = f2.createVariable('PFE', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PH2O = f2.createVariable('PH2O', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PK = f2.createVariable('PK', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PMC = f2.createVariable('PMC', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PMG = f2.createVariable('PMG', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PMN = f2.createVariable('PMN', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PMOTHR = f2.createVariable('PMOTHR', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PNA = f2.createVariable('PNA', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PNCOM = f2.createVariable('PNCOM', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PNH4 = f2.createVariable('PNH4', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PNO3 = f2.createVariable('PNO3', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    POC = f2.createVariable('POC', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PRPA = f2.createVariable('PRPA', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PSI = f2.createVariable('PSI', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PSO4 = f2.createVariable('PSO4', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PTI = f2.createVariable('PTI', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    SO2 = f2.createVariable('SO2', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    SOAALK = f2.createVariable('SOAALK', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    SULF = f2.createVariable('SULF', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    TERP = f2.createVariable('TERP', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    TOL = f2.createVariable('TOL', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    UNK = f2.createVariable('UNK', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    UNR = f2.createVariable('UNR', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    VOC_INV = f2.createVariable('VOC_INV', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    XYLMN = f2.createVariable('XYLMN', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
-    PMFINE = f2.createVariable('PMFINE', 'f4', ('TSTEP', 'LAY', 'ROW','COL'))
 
-    
     # Passing data into variables
     TFLAG[:,:,:] = tflag
     #TFLAG[:] = dates.index
@@ -208,147 +105,30 @@ def createNETCDFannual(folder,name,data,xX,yY,dates,area,ltz):
     print(xX.shape)
     LAT[:,:] =  yY
     LON[:,:] = xX
-    print(area1.shape)
-    AREA[:,:] = area1
-    LTZ[:,:] = ltz
-    print(str(ACET.shape) + str(data.shape))
-    ACET[:,:,:,:] =  data[:,0,:,:]
-    ACROLEIN[:,:,:,:] = data[:,1,:,:]
-    ALD2[:,:,:,:] = data[:,2,:,:]
-    ALD2_PRIMARY[:,:,:,:] = data[:,3,:,:]
-    ALDX[:,:,:,:] = data[:,4,:,:]
-    BENZ[:,:,:,:] = data[:,5,:,:]
-    BUTADIENE13[:,:,:,:] = data[:,6,:,:]
-    CH4[:,:,:,:] = data[:,7,:,:]
-    CH4_INV[:,:,:,:] = data[:,8,:,:]
-    CL2[:,:,:,:] =  data[:,9,:,:]
-    CO[:,:,:,:] = data[:,10,:,:]
-    CO2_INV[:,:,:,:] =  data[:,11,:,:]
-    ETH[:,:,:,:] =  data[:,12,:,:]
-    ETHA[:,:,:,:] =  data[:,13,:,:]
-    ETHY[:,:,:,:] =  data[:,14,:,:]
-    ETOH[:,:,:,:] = data[:,15,:,:]
-    FORM[:,:,:,:] = data[:,16,:,:]
-    FORM_PRIMARY[:,:,:,:] = data[:,17,:,:]
-    HCL[:,:,:,:] = data[:,18,:,:]
-    HONO[:,:,:,:] = data[:,19,:,:]
-    IOLE[:,:,:,:] = data[:,20,:,:]
-    ISOP[:,:,:,:] = data[:,21,:,:]
-    KET[:,:,:,:] = data[:,22,:,:]
-    MEOH[:,:,:,:] = data[:,23,:,:]
-    N2O_INV[:,:,:,:] = data[:,24,:,:]
-    NAPH[:,:,:,:] = data[:,25,:,:]
-    NH3[:,:,:,:] = data[:,26,:,:]
-    NH3_FERT[:,:,:,:] = data[:,27,:,:]
-    NO[:,:,:,:] = data[:,28,:,:]
-    NO2[:,:,:,:] = data[:,29,:,:]
-    NVOL[:,:,:,:] = data[:,30,:,:]
-    OLE[:,:,:,:] = data[:,31,:,:]
-    PAL[:,:,:,:] = data[:,32,:,:]
-    PAR[:,:,:,:] = data[:,33,:,:]
-    PCA[:,:,:,:] = data[:,34,:,:]
-    PCL[:,:,:,:] = data[:,35,:,:]
-    PEC[:,:,:,:] = data[:,36,:,:]
-    PFE[:,:,:,:] = data[:,37,:,:]
-    PH2O[:,:,:,:] = data[:,38,:,:]
-    PK[:,:,:,:] = data[:,39,:,:]
-    PMC[:,:,:,:] = data[:,40,:,:]
-    PMG[:,:,:,:] = data[:,41,:,:]
-    PMN[:,:,:,:] = data[:,42,:,:]
-    PMOTHR[:,:,:,:] = data[:,43,:,:]
-    PNA[:,:,:,:] = data[:,44,:,:]
-    PNCOM[:,:,:,:] = data[:,45,:,:]
-    PNH4[:,:,:,:] = data[:,46,:,:]
-    PNO3[:,:,:,:] = data[:,47,:,:]
-    POC[:,:,:,:] = data[:,48,:,:]
-    PRPA[:,:,:,:] = data[:,49,:,:]
-    PSI[:,:,:,:] = data[:,50,:,:]
-    PSO4[:,:,:,:] = data[:,51,:,:]
-    PTI[:,:,:,:] = data[:,52,:,:]
-    SO2[:,:,:,:] = data[:,53,:,:]
-    SOAALK[:,:,:,:] = data[:,54,:,:]
-    SULF[:,:,:,:] = data[:,55,:,:]
-    TERP[:,:,:,:] = data[:,56,:,:]
-    TOL[:,:,:,:] = data[:,57,:,:]
-    UNK[:,:,:,:]= data[:,58,:,:]
-    UNR[:,:,:,:] = data[:,59,:,:]
-    VOC_INV[:,:,:,:] = data[:,60,:,:]
-    XYLMN[:,:,:,:] = data[:,61,:,:]
-    PMFINE[:,:,:,:] = data[:,62,:,:]
-    
-    
+ 
     #Add local attributes to variable instances
     TFLAG.units = '<YYYYDDD,HHMMSS>'
-    ACET.units = 'moles/year '
-    ACROLEIN.units = 'moles/year '
-    ALD2.units = 'moles/year '
-    ALD2_PRIMARY.units = 'moles/year '
-    ALDX.units = 'moles/year '
-    BENZ.units = 'moles/year '
-    BUTADIENE13.units = 'moles/year '
-    CH4.units = 'moles/year '
-    CH4_INV.units = 'g/year '
-    CL2.units = 'moles/year ' 
-    CO.units = 'moles/year '
-    CO2_INV.units = 'g/year '
-    ETH.units = 'moles/year '
-    ETHA.units = 'moles/year '
-    ETHY.units = 'moles/year '
-    ETOH.units = 'moles/year '
-    FORM.units = 'moles/year '
-    FORM_PRIMARY.units = 'moles/year '
-    HCL.units = 'moles/year '
-    HONO.units = 'moles/year '
-    IOLE.units = 'moles/year '
-    ISOP.units = 'moles/year '
-    KET.units = 'moles/year '
-    MEOH.units = 'moles/year '
-    N2O_INV.units = 'g/year '
-    NAPH.units = 'moles/year '
-    NH3.units = 'moles/year '
-    NH3_FERT.units = 'moles/year '
-    NO.units = 'moles/year '
-    NO2.units = 'moles/year '
-    NVOL.units = 'moles/year '
-    OLE.units = 'moles/year '
-    PAL.units = 'moles/year '
-    PAR.units = 'moles/year '
-    PCA.units = 'g/year '
-    PCL.units = 'g/year '
-    PEC.units = 'g/year '
-    PFE.units = 'g/year '
-    PH2O.units = 'g/year '
-    PK.units = 'g/year '
-    PMC.units = 'g/year ' 
-    PMG.units = 'g/year '
-    PMN.units = 'g/year ' 
-    PMOTHR.units = 'g/year ' 
-    PNA.units = 'g/year ' 
-    PNCOM.units = 'g/year ' 
-    PNH4.units = 'g/year ' 
-    PNO3.units = 'g/year ' 
-    POC.units = 'g/year ' 
-    PRPA.units = 'moles/year '
-    PSI.units = 'g/year ' 
-    PSO4.units = 'g/year ' 
-    PTI.units = 'g/year ' 
-    SO2.units = 'moles/year ' 
-    SOAALK.units = 'moles/year ' 
-    SULF.units = 'moles/year ' 
-    TERP.units = 'moles/year ' 
-    TOL.units = 'moles/year ' 
-    UNK.units = 'moles/year ' 
-    UNR.units = 'moles/year ' 
-    VOC_INV.units = 'g/year ' 
-    XYLMN.units = 'moles/year '
-    PMFINE.units = 'g/year '
     LON.units = 'degrees '
     LAT.units = 'degrees '
-    AREA.units = 'km2 '
-    LTZ.units = 'hours '
+    # Building variables
+    
+    polid = pd.read_csv(rootPath+'/IndustrialSpeciation/IND_speciation.csv')
+    
+    strVAR = ''
+    for ids in polid.ID:
+        strVAR = strVAR + ids.ljust(16)
+    #strVAR ='ACET            ACROLEIN        ALD2            ALD2_PRIMARY    ALDX            BENZ            BUTADIENE13     CH4             CH4_INV         CL2             CO              CO2_INV         ETH             ETHA            ETHY            ETOH            FORM            FORM_PRIMARY    HCL             HONO            IOLE            ISOP            KET             MEOH            N2O_INV         NAPH            NH3             NH3_FERT        NO              NO2             NVOL            OLE             PAL             PAR             PCA             PCL             PEC             PFE             PH2O            PK              PMC             PMG             PMN             PMOTHR          PNA             PNCOM           PNH4            PNO3            POC             PRPA            PSI             PSO4            PTI             SO2             SOAALK          SULF            TERP            TOL             UNK             UNR             VOC_INV         XYLMN           '
+    setattr(f2, 'VAR-LIST', strVAR)
+    
+    for ii in range(0,polid.shape[0]):
+        globals()[polid.ID[ii]] = f2.createVariable(polid.ID[ii], np.float32, ('TSTEP', 'LAY', 'ROW','COL'))
+        globals()[polid.ID[ii]][:,:,:,:] = data[ii,:,:,:,:]
+        globals()[polid.ID[ii]].var_desc = polid.ID[ii]+'[1]'
+        globals()[polid.ID[ii]].units = polid.units[ii]
+  
     
     f2.close()
-    print('Your annual BRAVESdatabase netCDF file is ready!')
+    print('Your annual emissions in netCDF file is ready!')
     
     #%% Creating a dataset
 def createNETCDFtemporalAndLayered(rootPath,folder,name,data,mcipMETCRO3Dpath):
@@ -369,7 +149,7 @@ def createNETCDFtemporalAndLayered(rootPath,folder,name,data,mcipMETCRO3Dpath):
     f2.NVARS= data.shape[1]
     # f2.NCOLS = f2.NCOLS
     # f2.NROWS = f2.NROWS
-    f2.FILEDESC= 'Industrial emissions ready for CMAQ'
+    f2.FILEDESC= 'Industrial emissions in KG/YEAR - VARIABLES UNITS ARE WRONG'
     f2.HISTORY =''
     # # Specifying dimensions
     #tempgrp = f.createGroup('vehicularEmissions_data')

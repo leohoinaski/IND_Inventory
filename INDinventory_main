@@ -7,17 +7,21 @@ Created on Wed Jul 27 15:26:04 2022
 """
 import os
 import numpy as np
-#import pandas as pd
+import pandas as pd
 import netCDF4 as nc
 import datetime
 from data2CubeData import gridSpecMCIP
-from netCDFcreator import createNETCDFtemporalAndLayered
+from netCDFcreator import createNETCDFtemporalAndLayered,createNETCDFannual
+from data2Data import emissReader, gridSpec, userDomain, AERMODDomain
+from IND_speciate import IndSpeciate
+from AERMOD_INPUTweb import pointSourceInput
 
 #================================INPUTS======================================
-# userGrid -> 0 for user-defined / 1 for mcip based grid
-userGrid = 1
+# userGrid -> 0 for user-defined / 1 for mcip based grid / 3 for user grid and
+# AERMOD ouput
+userGrid = 3
 
-# If userGrid  = 0 - Users can change the domain and resolution here.
+#------- If userGrid  = 0 - Users can change the domain and resolution here----
 lati = -36 #(Brazil) #lati = int(round(bound.miny)) # Initial latitud>
 
 latf = 8 #(Brazil) #latf = int(round(bound.maxy)) # Final latitude (>
@@ -30,40 +34,68 @@ deltaX = 0.05 # Grid resolution/spacing in x direction
 
 deltaY = 0.05 # Grig resolution/spacing in y direction
 
-# If userGrid = 1, define the path to mcip grid - GRIDDOT2D and METCROD2D files
-#mcipGRIDDOT2DPath = '/home/nobre/CMAQ_REPO/data/inputs_SC_2019/GRIDDOT2D_SC_2019.nc'
-mcipGRIDDOT2DPath = '/media/leohoinaski/HDD/SC_2019/GRIDDOT2D_SC_2019.nc'
-mcipGRIDCRO2DPath = '/media/leohoinaski/HDD/SC_2019/GRIDCRO2D_SC_2019.nc'
-#mcipMETCRO3Dpath = '/home/nobre/CMAQ_REPO/data/inputs_SC_2019/METCRO3D_SC_2019.nc'
-mcipMETCRO3Dpath = '/media/leohoinaski/HDD/SC_2019/METCRO3D_SC_2019.nc'
-mcipMETCRO2Dpath = '/media/leohoinaski/HDD/SC_2019/METCRO2D_SC_2019.nc' 
+fileId = 'BR' # Simulation identification.
 
-# Simulation identification. I suggest to use the MCIP GRIDNAME
-fileId = 'SC_2019'
+#-------------- If userGrid = 1, define the path to mcip files-----------------
+mcipPath = '/media/leohoinaski/HDD/SC_2019'
+gridName = 'SC_2019'
+
+#------- If userGrid  = 3 - Users can change the domain here-------------------
+polId = 'PMC' # Ver tabela de emissões do CMAQ
+
+lati = -36 #(Brazil) #lati = int(round(bound.miny)) # Initial latitud>
+
+latf = 8 #(Brazil) #latf = int(round(bound.maxy)) # Final latitude (>
+
+loni = -76 #(Brazil) #loni = int(round(bound.minx)) # Initial longit>
+
+lonf = -32 #(Brazil) #lonf = int(round(bound.maxx)) # Final longitu>
+
+fileId = 'BR' # Simulation identification.
+
+user = 'leohoinaski'
+standard = 50
+start_year=2022
+start_month=1
+start_day=1
+end_year=2022
+end_month=12
+end_day=31
+#===============================PROCESSING=====================================
 
 # Path to functions and BRAVESdatabase_main.py
 rootPath = os.path.abspath(os.getcwd())
 os.chdir(rootPath)
 
-# Output path
-outPath = rootPath +'/Outputs'
-
 # Path to inputs
 inPath = rootPath +'/Inputs'
 
-# Creating output directory
-if os.path.isdir(outPath)==0:
-    os.mkdir(outPath)
-    
-outPath = rootPath +'/Outputs/'+fileId
-if os.path.isdir(outPath)==0:
-    os.mkdir(outPath)
-
 # THis is your grid identification   
 if userGrid == 0:
+    
+    outPath = rootPath +'/Outputs/'+fileId
+    if os.path.isdir(outPath)==0:
+        os.mkdir(outPath)
+        
     gridId = fileId+'_'+str(deltaX)+'x'+str(deltaY) # grid definition identification
+    domain,x,y = userDomain(lati,latf,loni,lonf,deltaX,deltaY)
+    dataEmissIND, centerIND, emisPar = emissReader(rootPath,domain)
+    dataIND,xX,yY = gridSpec (rootPath,outPath,dataEmissIND,centerIND,x,y)
+    name = 'IND_GriddedAnnualEmissions_'+gridId+'.nc'
+    conv = 365*24*60*60/1000
+    createNETCDFannual(rootPath,outPath,name,dataIND*conv,xX,yY)
+    
 elif userGrid == 1:
-    gridId = fileId+'_'+'MCIPgrid' # grid definition identification
+    
+    outPath = rootPath +'/Outputs/'+gridName
+    if os.path.isdir(outPath)==0:
+        os.mkdir(outPath)
+        
+    mcipGRIDDOT2DPath = mcipPath+'/GRIDDOT2D_'+gridName+'.nc'
+    mcipGRIDCRO2DPath = mcipPath+'/GRIDCRO2D_'+gridName+'.nc'
+    mcipMETCRO3Dpath = mcipPath+'/METCRO3D_'+gridName+'.nc'
+    mcipMETCRO2Dpath = mcipPath+'/METCRO2D_'+gridName+'.nc' 
+    gridId = gridName+'_'+'MCIPgrid' # grid definition identification
     dataTempo=None
     dataTempo = gridSpecMCIP (rootPath,outPath,
                       mcipMETCRO3Dpath,mcipMETCRO2Dpath,
@@ -82,5 +114,33 @@ elif userGrid == 1:
 
     createNETCDFtemporalAndLayered(rootPath,outPath,name,dataTempo,mcipMETCRO3Dpath)
 
-# domain,x,y = MCIPDomain(mcipGRIDDOT2DPath)
-# dataEmissIND, centerIND = emissReader(rootPath,domain)
+elif userGrid == 3:
+    
+    outPath = rootPath +'/Outputs/'+fileId
+    if os.path.isdir(outPath)==0:
+        os.mkdir(outPath)
+        
+    domain = AERMODDomain(lati,latf,loni,lonf)
+    dataEmissIND, centerIND, emisPar, indID = emissReader(rootPath,domain)
+    dataEmissX = IndSpeciate(rootPath,dataEmissIND)
+    dataCSV = pd.DataFrame()
+    dataCSV['fonte'] = indID
+    dataCSV['tipo'] = 'POINT'
+    dataCSV['Long'] = centerIND.x
+    dataCSV['Lat'] = centerIND.y
+    dataCSV['Altitude'] = 0
+    dataCSV['Altura da chaminé'] = emisPar.Hs
+    dataCSV['Temperatura de saída'] = emisPar.Ts
+    dataCSV['Velocidade de saída'] = emisPar.Vs
+    dataCSV['Diâmetro'] = emisPar.Ds
+    dataCSV['Emissão'] = dataEmissX[polId]
+    dataCSV.to_csv(outPath+'/IND_AERMODall.csv')
+    
+    for ii in range(0,dataCSV['fonte'].shape[0]):
+        dataCSV['fonte'][ii] = 'ID_'+str(ii)
+        
+    dataCSV=dataCSV.dropna(axis=0)
+    dataCSV.to_csv(outPath+'/IND_AERMODwithData.csv')
+    pointSourceInput(dataCSV,user, polId, standard, start_year, start_month, start_day, end_year, end_month, end_day,outPath)
+    
+    

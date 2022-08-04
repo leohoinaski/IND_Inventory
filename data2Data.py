@@ -1,7 +1,59 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
 
+"""
+-------------------------------------------------------------------------------
+                             IND2netCDF.py
+                             
+                             
+This is the main script to convert industrial emission from .csv file 
+to chemical speciated  and temporal disaggregated netCDF files.
+
+
+Inputs: 
+    
+    rootPath: Path to functions
+    
+    outPath: Path to output folder
+    
+    lati: Initial latitude (lower-left)
+    
+    latf: Final latitude (upper-right)
+    
+    loni: Initial longitude (lower-left)
+    
+    lonf: Final longitude (upper-right)
+    
+    deltaX: Grid resolution/spacing in x direction
+    
+    deltaY: Grig resolution/spacing in y direction
+    
+    year: Base-year for your simulation
+            
+    fileId = identification of your output files
+    
+    
+Input file:
+    
+    BR_Ind.xlsx - excel file with industrial characteristics, emissions, 
+        and coordinates. Emissions are in kg/s.
+       
+
+Outputs:
+    
+    'INDannualEmiss_'+fileId+'_'+str(deltaX)+'x'+str(deltaY)+'_'+str(year)+'.nc'
+        (unit in g/year)
+    
+External functions:
+    gridding, populatingGrid, netCDFcreator
+    
+    
+    
+Last update = 29/10/2021
+
+Author: Leonardo Hoinaski - leonardo.hoinaski@ufsc.br
+
+-------------------------------------------------------------------------------
 """
 
 import geopandas as gpd
@@ -11,27 +63,10 @@ import numpy as np
 #from temporalDisagregation import temporalDisagVehicular
 import numpy.matlib
 from shapely.geometry import Polygon
-from gridding import griddingMCIP, populatingGridTemp3D
+from gridding import gridding, populatingGrid
 from IND_speciate import IndSpeciate
 #import datetime
-import netCDF4 as nc
-
-
-#%% MCIPDomain
-def MCIPDomain(GRIDDOT2D):   
-    print('Extracting MCIP GRIDDOT2D coordinates')
-    
-    #dataVar = list(ds.variables.keys())
-    x = np.unique(GRIDDOT2D['LOND'][:])
-    y = np.unique(GRIDDOT2D['LATD'][:])
-    #-------------------- Reading industrial emissions-----------------------------   
-    # Creating domain window
-    domain = Polygon(zip([np.min(x),np.min(x),np.max(x),np.max(x)],
-                         [np.min(y),np.max(y),np.max(y),np.min(y)])) 
-    domain = gpd.GeoDataFrame(index=[0],geometry=[domain])
-    domain.crs = "EPSG:4326"
-    #Reading
-    return domain,x,y
+#import netCDF4 as nc
 
 #%% emissReader
 def emissReader(rootPath,domain):
@@ -91,26 +126,31 @@ def emissReader(rootPath,domain):
     isna = emisPar.Vs.isna()
     emisPar.Vs[isna] = 5.0
     
+    indID = ind['Source']
     
-    return dataEmissIND, centerIND, emisPar
-    
+    return dataEmissIND, centerIND, emisPar,indID
+
+#%% userDomain
+def userDomain(lati,latf,loni,lonf,deltaX,deltaY):
+    # Creating domain window
+    domain = Polygon(zip([loni,loni,lonf,lonf],[lati,latf,latf,lati])) 
+    domain = gpd.GeoDataFrame(index=[0],geometry=[domain])
+    domain.crs = "EPSG:4326"
+    print('Setting domain borders')
+    x = np.arange(loni, lonf+2*deltaX, deltaX)
+    y = np.arange(lati, latf+2*deltaY, deltaY)
+    return domain,x,y
+
+#%% userDomain
+def AERMODDomain(lati,latf,loni,lonf):
+    # Creating domain window
+    domain = Polygon(zip([loni,loni,lonf,lonf],[lati,latf,latf,lati])) 
+    domain = gpd.GeoDataFrame(index=[0],geometry=[domain])
+    domain.crs = "EPSG:4326"
+    return domain
 
 #%% gridSpec
-def gridSpecMCIP (rootPath,outPath,
-                  mcipMETCRO3Dpath,mcipMETCRO2Dpath,
-                  mcipGRIDCRO2DPath,mcipGRIDDOT2DPath):
-    
-    print('Calling gridSpecMCIP')
-    METCRO3D = nc.Dataset(mcipMETCRO3Dpath)
-    METCRO2D = nc.Dataset(mcipMETCRO2Dpath)
-    GRIDCRO2D = nc.Dataset(mcipGRIDCRO2DPath)        
-    GRIDDOT2D = nc.Dataset(mcipGRIDDOT2DPath) 
-   
-    
-    domain,x,y = MCIPDomain(GRIDDOT2D)
-    
-    dataEmissIND, centerIND, emisPar = emissReader(rootPath,domain)
-    
+def gridSpec (rootPath,outPath,dataEmissIND,centerIND,x,y):
     #Loop over each cel in x direction
     polygons=[]
     for ii in range(1,x.shape[0]):
@@ -124,17 +164,17 @@ def gridSpecMCIP (rootPath,outPath,
 
     # Creating basegridfile
     baseGrid = gpd.GeoDataFrame({'geometry':polygons})
-    baseGrid.to_csv(outPath+'/baseGrid'+'.csv')
+    baseGrid.to_csv(outPath+'/baseGrid.csv')
     baseGrid.crs = "EPSG:4326" 
-    print('baseGrid.csv was created at ' + outPath ) 
+    print('baseGrid.csv was created at ' + outPath )
+
+   
     
     # Calling speciation function
-    print('Speciating emissions')
     dataEmissX = IndSpeciate(rootPath,dataEmissIND)
     
-    xv,yv,xX,yY = griddingMCIP(GRIDCRO2D,GRIDDOT2D,METCRO3D)
-    
-    dataTempo = populatingGridTemp3D(dataEmissX,centerIND,emisPar,xv,yv,xX,yY,
-                                     METCRO3D,METCRO2D,GRIDCRO2D)
-    
-    return dataTempo
+    # Calling gridding function
+    grids,xv,yv,xX,yY = gridding(x,y)
+    # Calling populatingGrid function
+    dataIND = populatingGrid(dataEmissX.fillna(0),centerIND,xX,yY,xv,yv)
+    return dataIND,xX,yY
