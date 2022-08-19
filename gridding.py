@@ -63,20 +63,25 @@ def populatingGridTemp3D(dataEmiss,center,emisPar,xv,yv,xX,yY,METCRO3D,METCRO2D,
     dataTempo = np.zeros([dataEmiss.shape[1],METCRO3D['TFLAG'][:].shape[0],METCRO3D.NLAYS,
                           METCRO3D.NROWS, METCRO3D.NCOLS],dtype=numpy.single)
     xcenter = center.geometry.centroid.x
-    ycenter = center.geometry.centroid.y 
+    ycenter = center.geometry.centroid.y
+    P = METCRO3D['PRES'][:]
+    T = METCRO3D['TA'][:]
+    TEMP2 = METCRO2D['TEMP2'][:]
+    HT = GRIDCRO2D['HT'][:]
+    Uas = METCRO2D['WSPD10'][:]
     for ii in range(0,dataEmiss.shape[0]):
         dist = ((xcenter[ii]-xX)**2 + (ycenter[ii]-yY)**2)**(1/2)
         mindist = np.where(dist == np.amin(dist))
         print('------------Source number = ' + str(ii))
         for jj in range(0,dataTempo.shape[1]):
             print('TSTEP = ' + str(jj))
-            P =  METCRO3D['PRES'][jj,:,mindist[0][0],mindist[1][0]]
-            T = METCRO3D['TA'][:][jj,:,mindist[0][0],mindist[1][0]]
-            TEMP2 = METCRO2D['TEMP2'][:][jj,0,mindist[0][0],mindist[1][0]]
-            T = np.append(TEMP2,T)
-            HT = GRIDCRO2D['HT'][0,0,mindist[0][0],mindist[1][0]]  
-            Uas = METCRO2D['WSPD10'][0,0,mindist[0][0],mindist[1][0]] 
-            factor = ptVerticalProfile(P,T,Uas,HT,
+            Pu =  P[jj,:,mindist[0][0],mindist[1][0]]
+            Tu = T[jj,:,mindist[0][0],mindist[1][0]]
+            TEMP2u = TEMP2[:][jj,0,mindist[0][0],mindist[1][0]]
+            Tu = np.append(TEMP2u,Tu)
+            HTu = HT[0,0,mindist[0][0],mindist[1][0]]  
+            Uasu = Uas[0,0,mindist[0][0],mindist[1][0]] 
+            factor = ptVerticalProfile(Pu,Tu,Uasu,HTu,
                                        emisPar.Ts[ii],emisPar.Vs[ii],
                                        emisPar.Ds[ii],emisPar.Hs[ii])
             
